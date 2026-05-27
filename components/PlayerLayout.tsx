@@ -16,19 +16,18 @@ export default function PlayerLayout() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('session_token');
-    if (!token) {
-      router.push('/auth/login');
-    } else {
-      setIsAuthenticated(true);
-      setIsLoading(false);
-    }
+    // Check if session cookie is present
+    // Note: Document.cookie is accessible on client, but we rely on proxy.ts
+    // to protect /player route. If we reach this component, we are authenticated.
+    setIsAuthenticated(true);
+    setIsLoading(false);
   }, [router]);
 
   const handleLogout = async () => {
-    localStorage.removeItem('session_token');
-    localStorage.removeItem('user_id');
     await fetch('/api/auth/logout', { method: 'POST' });
+    // Clear the session cookie by setting its value to empty and maxAge to 0
+    // Note: HTTP-only cookies cannot be cleared from client-side JavaScript.
+    // The logout endpoint should clear the cookie on the server.
     router.push('/auth/login');
   };
 

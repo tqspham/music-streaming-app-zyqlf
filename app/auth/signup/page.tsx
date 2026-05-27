@@ -30,25 +30,39 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signup', {
+      // Step 1: POST credentials to /api/auth/signup
+      const signupResponse = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
+      if (!signupResponse.ok) {
+        const data = await signupResponse.json();
         setError(data.error || 'Signup failed');
+        setIsLoading(false);
         return;
       }
 
-      const data = await response.json();
-      localStorage.setItem('session_token', data.sessionToken);
-      localStorage.setItem('user_id', data.userId);
-      await router.push('/player');
+      const signupData = await signupResponse.json();
+      const { sessionToken } = signupData;
+
+      // Step 2: POST sessionToken to /api/auth/callback to set secure cookie
+      const callbackResponse = await fetch('/api/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken }),
+      });
+
+      // Step 3: Await router.push() to complete navigation
+      if (callbackResponse.ok) {
+        await router.push('/player');
+      } else {
+        setError('Failed to establish session');
+        setIsLoading(false);
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

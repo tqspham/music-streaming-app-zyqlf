@@ -18,25 +18,39 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      // Step 1: POST credentials to /api/auth/login
+      const loginResponse = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
+      if (!loginResponse.ok) {
+        const data = await loginResponse.json();
         setError(data.error || 'Login failed');
+        setIsLoading(false);
         return;
       }
 
-      const data = await response.json();
-      localStorage.setItem('session_token', data.sessionToken);
-      localStorage.setItem('user_id', data.userId);
-      await router.push('/player');
+      const loginData = await loginResponse.json();
+      const { sessionToken } = loginData;
+
+      // Step 2: POST sessionToken to /api/auth/callback to set secure cookie
+      const callbackResponse = await fetch('/api/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken }),
+      });
+
+      // Step 3: Await router.push() to complete navigation
+      if (callbackResponse.ok) {
+        await router.push('/player');
+      } else {
+        setError('Failed to establish session');
+        setIsLoading(false);
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const publicAuthPaths = ['/auth/login', '/auth/signup'];
-const apiAuthPaths = ['/api/auth'];
 const protectedPaths = ['/player'];
 
 export function proxy(request: NextRequest) {
