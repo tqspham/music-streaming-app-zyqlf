@@ -27,7 +27,6 @@ export default function LoginPage() {
       if (!response.ok) {
         const data = await response.json();
         setError(data.error || 'Login failed');
-        setIsLoading(false);
         return;
       }
 
@@ -37,6 +36,7 @@ export default function LoginPage() {
       await router.push('/player');
     } catch (err) {
       setError('An error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };

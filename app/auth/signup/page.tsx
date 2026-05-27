@@ -39,7 +39,6 @@ export default function SignupPage() {
       if (!response.ok) {
         const data = await response.json();
         setError(data.error || 'Signup failed');
-        setIsLoading(false);
         return;
       }
 
@@ -49,6 +48,7 @@ export default function SignupPage() {
       await router.push('/player');
     } catch (err) {
       setError('An error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
