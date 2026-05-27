@@ -21,7 +21,6 @@ export default function PlayerLayout() {
   const [currentView, setCurrentView] = useState<ViewType>('now-playing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     // Check if session cookie is present
@@ -70,7 +69,7 @@ export default function PlayerLayout() {
         {currentView === 'now-playing' && <NowPlaying />}
         {currentView === 'search' && <SearchView />}
         {currentView === 'library' && <LibraryView />}
-        {currentView === 'profile' && <ProfileView userProfile={userProfile} />}
+        {currentView === 'profile' && <ProfileView userProfile={null} />}
       </main>
 
       {/* Bottom Navigation */}

@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+'use client';
+
+import { useState, useEffect } from 'react';
 import ProfileView from '@/components/ProfileView';
 
 export const metadata = {
@@ -13,46 +14,52 @@ interface UserProfile {
   created_at: string;
 }
 
-export default async function ProfilePage() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('session_token')?.value;
+export default function ProfilePage() {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!sessionToken) {
-    redirect('/auth/login');
-  }
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  let userProfile: UserProfile | null = null;
-  let error: string | null = null;
+        const response = await fetch('/api/auth/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
 
-  try {
-    const response = await fetch('http://localhost:3000/api/auth/profile', {
-      method: 'GET',
-      headers: {
-        'Cookie': `session_token=${sessionToken}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError('Your session has expired. Please sign in again.');
+          } else {
+            setError('This page couldn\'t load. Reload to try again, or go back.');
+          }
+          setIsLoading(false);
+          return;
+        }
 
-    if (!response.ok) {
-      error = 'Failed to load profile';
-    } else {
-      userProfile = await response.json();
-    }
-  } catch (err) {
-    error = 'An error occurred while loading your profile';
-  }
+        const profile: UserProfile = await response.json();
+        setUserProfile(profile);
+        setIsLoading(false);
+      } catch (err) {
+        setError('This page couldn\'t load. Reload to try again, or go back.');
+        setIsLoading(false);
+      }
+    };
 
-  if (error || !userProfile) {
-    return (
-      <div className="min-h-screen bg-(--color-background) flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-(--color-text) mb-4">Profile Unavailable</h1>
-          <p className="text-(--color-muted-text)">{error || 'Could not load your profile. Please try again.'}</p>
-        </div>
-      </div>
-    );
-  }
+    fetchProfile();
+  }, []);
 
-  return <ProfileView userProfile={userProfile} />;
+  return (
+    <ProfileView
+      userProfile={userProfile}
+      isLoading={isLoading}
+      error={error}
+    />
+  );
 }

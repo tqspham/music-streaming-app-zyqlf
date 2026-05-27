@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Lock, Trash2, Mail, Calendar } from 'lucide-react';
+import { LogOut, Lock, Trash2, Mail, Calendar, Music } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -11,13 +11,19 @@ interface UserProfile {
 }
 
 interface ProfileViewProps {
-  userProfile: UserProfile;
+  userProfile: UserProfile | null;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export default function ProfileView({ userProfile }: ProfileViewProps) {
+export default function ProfileView({
+  userProfile,
+  isLoading = false,
+  error,
+}: ProfileViewProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [error, setError] = useState('');
+  const [logoutError, setLogoutError] = useState('');
 
   const formatDate = (dateString: string) => {
     try {
@@ -33,7 +39,7 @@ export default function ProfileView({ userProfile }: ProfileViewProps) {
   };
 
   const handleLogout = async () => {
-    setError('');
+    setLogoutError('');
     setIsLoggingOut(true);
 
     try {
@@ -42,17 +48,64 @@ export default function ProfileView({ userProfile }: ProfileViewProps) {
       });
 
       if (!response.ok) {
-        setError('Failed to log out. Please try again.');
+        setLogoutError('Failed to log out. Please try again.');
         setIsLoggingOut(false);
         return;
       }
 
       router.push('/auth/login');
     } catch (err) {
-      setError('An error occurred while logging out.');
+      setLogoutError('An error occurred while logging out.');
       setIsLoggingOut(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-(--color-background) pb-20">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Music className="w-12 h-12 text-(--color-primary) animate-pulse mx-auto mb-4" />
+            <p className="text-(--color-muted-text)">Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full bg-(--color-background) pb-20">
+        <div className="flex items-center justify-center h-full px-4">
+          <div className="text-center max-w-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-(--color-surface) rounded-full mb-4">
+              <Mail className="w-8 h-8 text-(--color-danger)" />
+            </div>
+            <h1 className="text-2xl font-bold text-(--color-text) mb-4">Profile Unavailable</h1>
+            <p className="text-(--color-muted-text) mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-(--color-primary) text-(--color-background) rounded font-medium hover:bg-(--color-secondary) transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex flex-col h-full bg-(--color-background) pb-20">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-(--color-muted-text)">No profile data available</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-(--color-background) pb-20">
@@ -64,9 +117,9 @@ export default function ProfileView({ userProfile }: ProfileViewProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {error && (
+        {logoutError && (
           <div className="mb-6 bg-opacity-20 bg-(--color-danger) border border-(--color-danger) text-(--color-text) px-4 py-3 rounded">
-            {error}
+            {logoutError}
           </div>
         )}
 
