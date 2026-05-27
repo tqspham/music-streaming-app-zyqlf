@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +9,9 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
+
+    // Import supabase dynamically at request time
+    const { supabase } = await import('@/lib/supabase');
 
     // Query user from database
     const { data: user, error } = await supabase
