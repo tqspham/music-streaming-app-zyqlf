@@ -34,7 +34,7 @@ export default function LoginPage() {
       const data = await response.json();
       localStorage.setItem('session_token', data.sessionToken);
       localStorage.setItem('user_id', data.userId);
-      router.push('/player');
+      await router.push('/player');
     } catch (err) {
       setError('An error occurred. Please try again.');
       setIsLoading(false);
