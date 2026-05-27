@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
-
-const MOCK_USERS: Record<string, { id: string; email: string; passwordHash: string }> = {
-  'user@example.com': {
-    id: 'user-1',
-    email: 'user@example.com',
-    passwordHash: '$2a$10$TLWu2VQo/ZCNZ9mD5JLdE.d5HjvXiHXA5Ej3YxYGQeUCaLZVqJwAm',
-  },
-};
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,30 +11,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    if (MOCK_USERS[email]) {
-      return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
-    }
-
     if (password.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
     }
 
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('music_streaming_app_zyqlf_users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
-    const userId = randomUUID();
 
-    MOCK_USERS[email] = {
-      id: userId,
-      email,
-      passwordHash,
-    };
+    // Insert new user
+    const { data: newUser, error } = await supabase
+      .from('music_streaming_app_zyqlf_users')
+      .insert([
+        {
+          email: email.toLowerCase(),
+          password_hash: passwordHash,
+        },
+      ])
+      .select('id, email')
+      .single();
 
-    const sessionToken = Buffer.from(`${userId}:${Date.now()}`).toString('base64');
+    if (error || !newUser) {
+      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+    }
+
+    // Generate a mock session token
+    const sessionToken = Buffer.from(`${newUser.id}:${Date.now()}`).toString('base64');
 
     return NextResponse.json(
       {
         sessionToken,
-        userId,
-        email,
+        userId: newUser.id,
+        email: newUser.email,
       },
       { status: 201 }
     );
