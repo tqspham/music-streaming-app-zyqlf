@@ -6,14 +6,22 @@ import { useRouter } from 'next/navigation';
 import NowPlaying from './NowPlaying';
 import SearchView from './SearchView';
 import LibraryView from './LibraryView';
+import ProfileView from './ProfileView';
 
-type ViewType = 'now-playing' | 'search' | 'library';
+type ViewType = 'now-playing' | 'search' | 'library' | 'profile';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  created_at: string;
+}
 
 export default function PlayerLayout() {
   const router = useRouter();
   const [currentView, setCurrentView] = useState<ViewType>('now-playing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     // Check if session cookie is present
@@ -25,9 +33,6 @@ export default function PlayerLayout() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    // Clear the session cookie by setting its value to empty and maxAge to 0
-    // Note: HTTP-only cookies cannot be cleared from client-side JavaScript.
-    // The logout endpoint should clear the cookie on the server.
     router.push('/auth/login');
   };
 
@@ -65,6 +70,7 @@ export default function PlayerLayout() {
         {currentView === 'now-playing' && <NowPlaying />}
         {currentView === 'search' && <SearchView />}
         {currentView === 'library' && <LibraryView />}
+        {currentView === 'profile' && <ProfileView userProfile={userProfile} />}
       </main>
 
       {/* Bottom Navigation */}
@@ -98,6 +104,16 @@ export default function PlayerLayout() {
           }`}
         >
           Library
+        </button>
+        <button
+          onClick={() => setCurrentView('profile')}
+          className={`flex-1 py-4 text-center text-sm font-medium transition-colors ${
+            currentView === 'profile'
+              ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
+              : 'text-(--color-muted-text) hover:text-(--color-text)'
+          }`}
+        >
+          Profile
         </button>
       </nav>
     </div>
