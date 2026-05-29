@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Music, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import DiscoveryView from './DiscoveryView';
 import NowPlaying from './NowPlaying';
 import SearchView from './SearchView';
 import LibraryView from './LibraryView';
 import ProfileView from './ProfileView';
 
-type ViewType = 'now-playing' | 'search' | 'library' | 'profile';
+type ViewType = 'discovery' | 'now-playing' | 'search' | 'library' | 'profile';
 
 interface UserProfile {
   id: string;
@@ -18,7 +19,7 @@ interface UserProfile {
 
 export default function PlayerLayout() {
   const router = useRouter();
-  const [currentView, setCurrentView] = useState<ViewType>('now-playing');
+  const [currentView, setCurrentView] = useState<ViewType>('discovery');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,6 +67,7 @@ export default function PlayerLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden">
+        {currentView === 'discovery' && <DiscoveryView />}
         {currentView === 'now-playing' && <NowPlaying />}
         {currentView === 'search' && <SearchView />}
         {currentView === 'library' && <LibraryView />}
@@ -74,6 +76,16 @@ export default function PlayerLayout() {
 
       {/* Bottom Navigation */}
       <nav className="bg-(--color-surface) border-t border-(--color-border) flex items-center justify-around">
+        <button
+          onClick={() => setCurrentView('discovery')}
+          className={`flex-1 py-4 text-center text-sm font-medium transition-colors ${
+            currentView === 'discovery'
+              ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
+              : 'text-(--color-muted-text) hover:text-(--color-text)'
+          }`}
+        >
+          Discover
+        </button>
         <button
           onClick={() => setCurrentView('now-playing')}
           className={`flex-1 py-4 text-center text-sm font-medium transition-colors ${
