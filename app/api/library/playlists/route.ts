@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       .eq('playlist_id', playlistId)
       .maybeSingle();
 
+    // Explicitly check for errors in the check query
     if (checkError) {
       console.error('[POST /api/library/playlists] Supabase check query error:', {
         code: checkError.code,
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to check playlist' }, { status: 500 });
     }
 
+    // If existing is not null, the playlist is already in the library
     if (existing) {
       return NextResponse.json(
         { error: 'Playlist already in your library' },
