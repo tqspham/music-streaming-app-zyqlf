@@ -32,6 +32,12 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('[GET /api/library/playlists] Supabase query error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json({ error: 'Failed to fetch playlists' }, { status: 500 });
     }
 
@@ -48,6 +54,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(formattedPlaylists, { status: 200 });
   } catch (error) {
+    console.error('[GET /api/library/playlists] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -95,6 +102,12 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (checkError) {
+      console.error('[POST /api/library/playlists] Supabase check query error:', {
+        code: checkError.code,
+        message: checkError.message,
+        details: checkError.details,
+        hint: checkError.hint,
+      });
       return NextResponse.json({ error: 'Failed to check playlist' }, { status: 500 });
     }
 
@@ -121,7 +134,18 @@ export async function POST(request: NextRequest) {
       .select('id, user_id, playlist_id, name, description, cover_image_url, songs_json, created_at')
       .single();
 
-    if (insertError || !newPlaylist) {
+    if (insertError) {
+      console.error('[POST /api/library/playlists] Supabase insert query error:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
+      return NextResponse.json({ error: 'Failed to add playlist' }, { status: 500 });
+    }
+
+    if (!newPlaylist) {
+      console.error('[POST /api/library/playlists] Insert returned no data');
       return NextResponse.json({ error: 'Failed to add playlist' }, { status: 500 });
     }
 
@@ -138,6 +162,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(formattedPlaylist, { status: 201 });
   } catch (error) {
+    console.error('[POST /api/library/playlists] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -181,11 +206,18 @@ export async function DELETE(request: NextRequest) {
       .eq('id', playlistId);
 
     if (error) {
+      console.error('[DELETE /api/library/playlists] Supabase delete query error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json({ error: 'Failed to remove playlist' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Playlist removed' }, { status: 200 });
   } catch (error) {
+    console.error('[DELETE /api/library/playlists] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
