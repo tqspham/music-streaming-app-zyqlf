@@ -1,6 +1,7 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Check } from 'lucide-react';
 
 interface Song {
   id: string;
@@ -22,21 +23,93 @@ interface Playlist {
 interface PlaylistDetailModalProps {
   playlist: Playlist;
   onClose: () => void;
+  onPlaylistAdded?: () => void;
 }
 
 export default function PlaylistDetailModal({
   playlist,
   onClose,
+  onPlaylistAdded,
 }: PlaylistDetailModalProps) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [addStatus, setAddStatus] = useState<'idle' | 'success' | 'duplicate' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleAddToLibrary = async () => {
+    setIsAdding(true);
+    setAddStatus('idle');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/library/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playlistId: playlist.id,
+          name: playlist.name,
+          description: playlist.description,
+          coverImageUrl: playlist.coverImageUrl,
+          songs: playlist.songs,
+        }),
+        credentials: 'include',
+      });
+
+      if (response.status === 409) {
+        setAddStatus('duplicate');
+        setIsAdding(false);
+        return;
+      }
+
+      if (!response.ok) {
+        const data = await response.json();
+        setAddStatus('error');
+        setErrorMessage(data.error || 'Failed to add playlist');
+        setIsAdding(false);
+        return;
+      }
+
+      setAddStatus('success');
+      setIsAdding(false);
+      if (onPlaylistAdded) {
+        onPlaylistAdded();
+      }
+      // Close modal after brief delay to show success state
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setAddStatus('error');
+      setErrorMessage('An error occurred. Please try again.');
+      setIsAdding(false);
+    }
+  };
+
   const handleSongClick = (song: Song) => {
     // Queue song for playback (future enhancement: sync with global player context)
   };
+
+  const isButtonDisabled = isAdding || addStatus === 'success' || addStatus === 'duplicate';
+  const buttonText =
+    addStatus === 'success'
+      ? 'Added to Library'
+      : addStatus === 'duplicate'
+        ? 'Already in Your Library'
+        : isAdding
+          ? 'Adding...'
+          : 'Add to Library';
+
+  const buttonIcon =
+    addStatus === 'success'
+      ? 'check'
+      : addStatus === 'duplicate'
+        ? 'check'
+        : 'plus';
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center animate-fade-in">
@@ -67,7 +140,36 @@ export default function PlaylistDetailModal({
                 Playlist
               </h3>
               <h2 className="text-2xl font-bold text-(--color-text) mb-3">{playlist.name}</h2>
-              <p className="text-(--color-muted-text)">{playlist.songs.length} songs</p>
+              <p className="text-(--color-muted-text) mb-4">{playlist.songs.length} songs</p>
+              
+              {/* Add to Library Button and Status Messages */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleAddToLibrary}
+                  disabled={isButtonDisabled}
+                  className={`w-full py-2 px-4 rounded font-medium flex items-center justify-center gap-2 transition-colors ${
+                    addStatus === 'duplicate'
+                      ? 'bg-(--color-border) text-(--color-muted-text) cursor-not-allowed'
+                      : addStatus === 'success'
+                        ? 'bg-(--color-success) text-(--color-background)'
+                        : isAdding
+                          ? 'bg-(--color-primary) text-(--color-background) opacity-75'
+                          : 'bg-(--color-primary) text-(--color-background) hover:bg-(--color-secondary)'
+                  }`}
+                >
+                  {buttonIcon === 'check' ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  <span>{buttonText}</span>
+                </button>
+                {addStatus === 'error' && (
+                  <div className="bg-opacity-20 bg-(--color-danger) border border-(--color-danger) text-(--color-text) px-3 py-2 rounded text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface Song {
@@ -16,6 +16,18 @@ interface Playlist {
   id: string;
   name: string;
   songs: Song[];
+  isFromLibrary?: boolean;
+  playlistId?: string;
+}
+
+interface LibraryPlaylistFromAPI {
+  id: string;
+  name: string;
+  description: string;
+  coverImageUrl: string;
+  songs: Song[];
+  isFromLibrary: boolean;
+  playlistId: string;
 }
 
 const INITIAL_LIKED_SONGS: Song[] = [
@@ -90,9 +102,35 @@ export default function LibraryView() {
   const [activeTab, setActiveTab] = useState<LibraryTab>('all');
   const [likedSongs, setLikedSongs] = useState<Song[]>(INITIAL_LIKED_SONGS);
   const [playlists, setPlaylists] = useState<Playlist[]>(INITIAL_PLAYLISTS);
+  const [libraryPlaylists, setLibraryPlaylists] = useState<LibraryPlaylistFromAPI[]>([]);
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(true);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showNewPlaylistInput, setShowNewPlaylistInput] = useState(false);
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>(null);
+
+  // Fetch library playlists on mount
+  useEffect(() => {
+    const fetchLibraryPlaylists = async () => {
+      try {
+        setIsLoadingLibrary(true);
+        const response = await fetch('/api/library/playlists', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data: LibraryPlaylistFromAPI[] = await response.json();
+          setLibraryPlaylists(data);
+        }
+      } catch (error) {
+        // Silently fail - library playlists won't load but UI remains functional
+      } finally {
+        setIsLoadingLibrary(false);
+      }
+    };
+
+    fetchLibraryPlaylists();
+  }, []);
 
   const handleCreatePlaylist = () => {
     if (newPlaylistName.trim()) {
@@ -107,8 +145,27 @@ export default function LibraryView() {
     }
   };
 
-  const handleDeletePlaylist = (id: string) => {
-    setPlaylists(playlists.filter((p) => p.id !== id));
+  const handleDeletePlaylist = async (id: string, isFromLibrary: boolean) => {
+    if (isFromLibrary) {
+      // Delete from API
+      try {
+        const response = await fetch('/api/library/playlists', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playlistId: id }),
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          setLibraryPlaylists(libraryPlaylists.filter((p) => p.id !== id));
+        }
+      } catch (error) {
+        // Error handling
+      }
+    } else {
+      // Delete from local state
+      setPlaylists(playlists.filter((p) => p.id !== id));
+    }
   };
 
   const handleRemoveSongFromPlaylist = (playlistId: string, songId: string) => {
@@ -121,11 +178,40 @@ export default function LibraryView() {
     );
   };
 
+  const handlePlaylistAdded = async () => {
+    // Refresh library playlists from API
+    try {
+      const response = await fetch('/api/library/playlists', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: LibraryPlaylistFromAPI[] = await response.json();
+        setLibraryPlaylists(data);
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Merge user-created and library playlists for display
+  const allPlaylists = [
+    ...playlists,
+    ...libraryPlaylists.map((p) => ({
+      id: p.id,
+      name: p.name,
+      songs: p.songs,
+      isFromLibrary: p.isFromLibrary,
+      playlistId: p.playlistId,
+    })),
+  ];
 
   return (
     <div className="flex flex-col h-full bg-(--color-background) pb-20">
@@ -239,13 +325,17 @@ export default function LibraryView() {
             )}
 
             {/* Playlists List */}
-            {playlists.length === 0 ? (
+            {isLoadingLibrary ? (
+              <div className="text-center py-8 text-(--color-muted-text)">
+                <p>Loading playlists...</p>
+              </div>
+            ) : allPlaylists.length === 0 ? (
               <div className="text-center py-12 text-(--color-muted-text)">
                 <p>No playlists yet. Create one!</p>
               </div>
             ) : (
               <div className="divide-y divide-(--color-border)">
-                {playlists.map((playlist) => (
+                {allPlaylists.map((playlist) => (
                   <div key={playlist.id}>
                     <button
                       onClick={() =>
@@ -272,7 +362,7 @@ export default function LibraryView() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeletePlaylist(playlist.id);
+                          handleDeletePlaylist(playlist.id, !!playlist.isFromLibrary);
                         }}
                         className="p-2 text-(--color-muted-text) hover:text-(--color-danger) transition-colors"
                       >
@@ -306,14 +396,16 @@ export default function LibraryView() {
                                   {song.artist}
                                 </p>
                               </div>
-                              <button
-                                onClick={() =>
-                                  handleRemoveSongFromPlaylist(playlist.id, song.id)
-                                }
-                                className="p-1 text-(--color-muted-text) hover:text-(--color-danger) transition-colors flex-shrink-0"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {!playlist.isFromLibrary && (
+                                <button
+                                  onClick={() =>
+                                    handleRemoveSongFromPlaylist(playlist.id, song.id)
+                                  }
+                                  className="p-1 text-(--color-muted-text) hover:text-(--color-danger) transition-colors flex-shrink-0"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           ))
                         )}

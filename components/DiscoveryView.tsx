@@ -45,6 +45,10 @@ export default function DiscoveryView() {
     fetchPlaylists();
   }, []);
 
+  const handlePlaylistAdded = () => {
+    // Modal will close and trigger library refresh
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full bg-(--color-background) pb-20">
@@ -122,6 +126,7 @@ export default function DiscoveryView() {
         <PlaylistDetailModal
           playlist={selectedPlaylist}
           onClose={() => setSelectedPlaylist(null)}
+          onPlaylistAdded={handlePlaylistAdded}
         />
       )}
     </div>
