@@ -1,3 +1,4 @@
+import { VuxenoInspector } from "@/components/VuxenoInspector";
 import type { Metadata } from 'next';
 import './globals.css';
 
@@ -13,7 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-(--color-background) text-(--color-text)">{children}</body>
+      <body className="bg-(--color-background) text-(--color-text)">{children}        <VuxenoInspector />
+      </body>
     </html>
   );
 }
