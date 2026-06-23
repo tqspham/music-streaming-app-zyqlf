@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Music, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import DiscoveryView from './DiscoveryView';
 import NowPlaying from './NowPlaying';
 import SearchView from './SearchView';
@@ -18,7 +17,6 @@ interface UserProfile {
 }
 
 export default function PlayerLayout() {
-  const router = useRouter();
   const [currentView, setCurrentView] = useState<ViewType>('discovery');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +30,7 @@ export default function PlayerLayout() {
     // to protect /player route. If we reach this component, we are authenticated.
     setIsAuthenticated(true);
     setIsLoading(false);
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -60,7 +58,7 @@ export default function PlayerLayout() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/auth/login');
+    window.location.href = '/auth/login';
   };
 
   if (isLoading) {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { LogOut, Lock, Trash2, Mail, Calendar, Music } from 'lucide-react';
 
 interface UserProfile {
@@ -21,7 +20,6 @@ export default function ProfileView({
   isLoading = false,
   error,
 }: ProfileViewProps) {
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
 
@@ -53,7 +51,7 @@ export default function ProfileView({
         return;
       }
 
-      router.push('/auth/login');
+      window.location.href = '/auth/login';
     } catch (err) {
       setLogoutError('An error occurred while logging out.');
       setIsLoggingOut(false);
