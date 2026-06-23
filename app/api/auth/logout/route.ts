@@ -6,8 +6,9 @@ export async function POST(request: NextRequest) {
     response.cookies.set('session_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 0,
+      partitioned: process.env.NODE_ENV === 'production',
       path: '/',
     });
     return response;
