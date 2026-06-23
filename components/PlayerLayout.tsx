@@ -22,6 +22,9 @@ export default function PlayerLayout() {
   const [currentView, setCurrentView] = useState<ViewType>('discovery');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if session cookie is present
@@ -30,6 +33,30 @@ export default function PlayerLayout() {
     setIsAuthenticated(true);
     setIsLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsProfileLoading(false);
+      return;
+    }
+    const fetchProfile = async () => {
+      try {
+        setIsProfileLoading(true);
+        const res = await fetch('/api/auth/profile', { credentials: 'include' });
+        if (!res.ok) {
+          throw new Error('Failed to load profile');
+        }
+        const data: UserProfile = await res.json();
+        setUserProfile(data);
+        setProfileError(null);
+      } catch (err) {
+        setProfileError('Could not load profile');
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -71,7 +98,13 @@ export default function PlayerLayout() {
         {currentView === 'now-playing' && <NowPlaying />}
         {currentView === 'search' && <SearchView />}
         {currentView === 'library' && <LibraryView />}
-        {currentView === 'profile' && <ProfileView userProfile={null} />}
+        {currentView === 'profile' && (
+          <ProfileView
+            userProfile={userProfile}
+            isLoading={isProfileLoading}
+            error={profileError}
+          />
+        )}
       </main>
 
       {/* Bottom Navigation */}
