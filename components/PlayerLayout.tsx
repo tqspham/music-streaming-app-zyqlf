@@ -56,11 +56,6 @@ export default function PlayerLayout() {
     fetchProfile();
   }, [isAuthenticated]);
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/auth/login';
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-(--color-background) flex items-center justify-center">
@@ -81,13 +76,12 @@ export default function PlayerLayout() {
           <Music className="w-6 h-6 text-(--color-primary)" />
           <h1 className="text-2xl font-bold text-(--color-text)">SoundFlow</h1>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-(--color-text) hover:bg-(--color-border) rounded transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="text-sm">Sign out</span>
-        </button>
+        <form method="POST" action="/api/auth/logout">
+          <button type="submit" className="flex items-center gap-2 px-4 py-2 text-(--color-text) hover:bg-(--color-border) rounded transition-colors">
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm">Sign out</span>
+          </button>
+        </form>
       </header>
 
       {/* Main Content */}

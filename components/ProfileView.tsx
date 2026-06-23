@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { LogOut, Lock, Trash2, Mail, Calendar, Music } from 'lucide-react';
 
 interface UserProfile {
@@ -20,9 +19,6 @@ export default function ProfileView({
   isLoading = false,
   error,
 }: ProfileViewProps) {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState('');
-
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -33,28 +29,6 @@ export default function ProfileView({
       });
     } catch {
       return dateString;
-    }
-  };
-
-  const handleLogout = async () => {
-    setLogoutError('');
-    setIsLoggingOut(true);
-
-    try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        setLogoutError('Failed to log out. Please try again.');
-        setIsLoggingOut(false);
-        return;
-      }
-
-      window.location.href = '/auth/login';
-    } catch (err) {
-      setLogoutError('An error occurred while logging out.');
-      setIsLoggingOut(false);
     }
   };
 
@@ -115,12 +89,6 @@ export default function ProfileView({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {logoutError && (
-          <div className="mb-6 bg-opacity-20 bg-(--color-danger) border border-(--color-danger) text-(--color-text) px-4 py-3 rounded">
-            {logoutError}
-          </div>
-        )}
-
         {/* User Email Header Section */}
         <div className="mb-6 p-6 bg-(--color-surface) border border-(--color-border) rounded-lg">
           <div className="flex items-center gap-4 mb-4">
@@ -178,15 +146,16 @@ export default function ProfileView({
             <span>Delete Account</span>
           </button>
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full py-3 px-4 bg-(--color-danger) text-(--color-text) rounded font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
-          </button>
+          {/* Logout Button as form */}
+          <form method="POST" action="/api/auth/logout">
+            <button
+              type="submit"
+              className="w-full py-3 px-4 bg-(--color-danger) text-(--color-text) rounded font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          </form>
         </div>
       </div>
     </div>

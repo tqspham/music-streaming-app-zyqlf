@@ -2,16 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const response = NextResponse.json(
-      { message: 'Logged out successfully' },
-      { status: 200 }
-    );
-    // Clear the session_token HTTP-only cookie
+    const response = NextResponse.redirect(new URL('/auth/login', request.url), 302);
     response.cookies.set('session_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 0, // Immediate expiration
+      maxAge: 0,
       path: '/',
     });
     return response;
